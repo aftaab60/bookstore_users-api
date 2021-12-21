@@ -1,7 +1,7 @@
 package users
 
 import (
-	"github.com/aftaab60/bookstore_users-api/utils/errors"
+	"github.com/aftaab60/bookstore_utils-go/rest_errors"
 	"strings"
 )
 
@@ -21,13 +21,13 @@ type User struct {
 
 type Users []User
 
-func (user *User) Validate() *errors.RestErr {
+func (user *User) Validate() *rest_errors.RestErr {
 	user.Email = strings.TrimSpace(strings.ToLower(user.Email))
 	if user.Email == "" {
-		return errors.NewBadRequestError("invalid email address")
+		return rest_errors.NewBadRequestError("invalid email address")
 	}
 	if user.Password == "" {
-		return errors.NewBadRequestError("invalid password")
+		return rest_errors.NewBadRequestError("invalid password")
 	}
 	return nil
 }

@@ -4,7 +4,7 @@ import (
 	"github.com/aftaab60/bookstore_oauth-go/oauth"
 	"github.com/aftaab60/bookstore_users-api/domain/users"
 	"github.com/aftaab60/bookstore_users-api/services"
-	"github.com/aftaab60/bookstore_users-api/utils/errors"
+	"github.com/aftaab60/bookstore_utils-go/rest_errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -36,7 +36,7 @@ func Create(c *gin.Context) {
 func Create(c *gin.Context) {
 	var user users.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		restErr := errors.NewBadRequestError("invalid json body")
+		restErr := rest_errors.NewBadRequestError("invalid json body")
 		c.JSON(restErr.Status, restErr)
 		return
 	}
@@ -55,7 +55,7 @@ func Get(c *gin.Context) {
 	}
 	userId, userErr := strconv.ParseInt(c.Param("userId"), 10, 64)
 	if userErr != nil {
-		err := errors.NewBadRequestError("invalid user id")
+		err := rest_errors.NewBadRequestError("invalid user id")
 		c.JSON(err.Status, err)
 		return
 	}
@@ -74,14 +74,14 @@ func Get(c *gin.Context) {
 func Update(c *gin.Context) {
 	userId, userErr := strconv.ParseInt(c.Param("userId"), 10, 64)
 	if userErr != nil {
-		err := errors.NewBadRequestError("invalid user id")
+		err := rest_errors.NewBadRequestError("invalid user id")
 		c.JSON(err.Status, err)
 		return
 	}
 
 	var user users.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		restErr := errors.NewBadRequestError("invalid json body")
+		restErr := rest_errors.NewBadRequestError("invalid json body")
 		c.JSON(restErr.Status, restErr)
 		return
 	}
@@ -101,7 +101,7 @@ func Update(c *gin.Context) {
 func Delete(c *gin.Context) {
 	userId, userErr := strconv.ParseInt(c.Param("userId"), 10, 64)
 	if userErr != nil {
-		err := errors.NewBadRequestError("invalid user id")
+		err := rest_errors.NewBadRequestError("invalid user id")
 		c.JSON(err.Status, err)
 		return
 	}
@@ -116,7 +116,7 @@ func Delete(c *gin.Context) {
 func Search(c *gin.Context) {
 	userStatus, ok := c.GetQuery("status")
 	if !ok || userStatus=="" {
-		err := errors.NewBadRequestError("invalid user status")
+		err := rest_errors.NewBadRequestError("invalid user status")
 		c.JSON(err.Status, err)
 		return
 	}
@@ -132,7 +132,7 @@ func Search(c *gin.Context) {
 func Login(c *gin.Context) {
 	var loginRequest users.LoginRequest
 	if err := c.ShouldBindJSON(&loginRequest); err != nil {
-		restErr := errors.NewBadRequestError("invalid json body")
+		restErr := rest_errors.NewBadRequestError("invalid json body")
 		c.JSON(restErr.Status, restErr)
 		return
 	}

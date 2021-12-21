@@ -1,7 +1,7 @@
 package users
 
 import (
-	"github.com/aftaab60/bookstore_users-api/utils/errors"
+	"github.com/aftaab60/bookstore_utils-go/rest_errors"
 	"strings"
 )
 
@@ -10,13 +10,13 @@ type LoginRequest struct{
 	Password string `json:"password"`
 }
 
-func (request *LoginRequest) Validate() *errors.RestErr {
+func (request *LoginRequest) Validate() *rest_errors.RestErr {
 	request.Email = strings.TrimSpace(strings.ToLower(request.Email))
 	if request.Email == "" {
-		return errors.NewBadRequestError("invalid email address")
+		return rest_errors.NewBadRequestError("invalid email address")
 	}
 	if request.Password == "" {
-		return errors.NewBadRequestError("password is blank")
+		return rest_errors.NewBadRequestError("password is blank")
 	}
 	return nil
 }

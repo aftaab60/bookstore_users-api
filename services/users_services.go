@@ -1,10 +1,11 @@
 package services
 
 import (
+	"errors"
 	"github.com/aftaab60/bookstore_users-api/domain/users"
 	"github.com/aftaab60/bookstore_users-api/utils/crypto_utils"
 	"github.com/aftaab60/bookstore_users-api/utils/date_utils"
-	"github.com/aftaab60/bookstore_users-api/utils/errors"
+	"github.com/aftaab60/bookstore_utils-go/rest_errors"
 )
 
 var (
@@ -12,24 +13,24 @@ var (
 )
 
 type userServicesInterface interface {
-	CreateUser(users.User) (*users.User, *errors.RestErr)
-	GetUser(int64) (*users.User, *errors.RestErr)
-	UpdateUser(bool, users.User) (*users.User, *errors.RestErr)
-	DeleteUser(int64) *errors.RestErr
-	SearchUser(string) (users.Users, *errors.RestErr)
-	LoginUser(users.LoginRequest) (*users.User, *errors.RestErr)
+	CreateUser(users.User) (*users.User, *rest_errors.RestErr)
+	GetUser(int64) (*users.User, *rest_errors.RestErr)
+	UpdateUser(bool, users.User) (*users.User, *rest_errors.RestErr)
+	DeleteUser(int64) *rest_errors.RestErr
+	SearchUser(string) (users.Users, *rest_errors.RestErr)
+	LoginUser(users.LoginRequest) (*users.User, *rest_errors.RestErr)
 }
 
 type userService struct{}
 
-func (s *userService) CreateUser(user users.User) (*users.User, *errors.RestErr) {
+func (s *userService) CreateUser(user users.User) (*users.User, *rest_errors.RestErr) {
 	if err := user.Validate(); err != nil {
 		return nil, err
 	}
 	user.DateCreated = date_utils.GetNowDBString()
 	encryptPassword, err := crypto_utils.GetBcryptHash(user.Password)
 	if err != nil {
-		return nil, errors.NewInternalServerError("password error")
+		return nil, rest_errors.NewInternalServerError("password encryption error", errors.New("password error"))
 	}
 	user.Password = encryptPassword
 	if user.Status == "" {
@@ -42,7 +43,7 @@ func (s *userService) CreateUser(user users.User) (*users.User, *errors.RestErr)
 	return &user, nil
 }
 
-func (s *userService) GetUser(userId int64) (*users.User, *errors.RestErr) {
+func (s *userService) GetUser(userId int64) (*users.User, *rest_errors.RestErr) {
 	result := &users.User{
 		Id: userId,
 	}
@@ -52,7 +53,7 @@ func (s *userService) GetUser(userId int64) (*users.User, *errors.RestErr) {
 	return result, nil
 }
 
-func (s *userService) UpdateUser(isPatch bool, user users.User) (*users.User, *errors.RestErr) {
+func (s *userService) UpdateUser(isPatch bool, user users.User) (*users.User, *rest_errors.RestErr) {
 	currUser, getErr := s.GetUser(user.Id)
 	if getErr != nil {
 		return nil, getErr
@@ -87,7 +88,7 @@ func (s *userService) UpdateUser(isPatch bool, user users.User) (*users.User, *e
 	return currUser, nil
 }
 
-func (s *userService) DeleteUser(userId int64) *errors.RestErr {
+func (s *userService) DeleteUser(userId int64) *rest_errors.RestErr {
 	currUser, getErr := s.GetUser(userId)
 	if getErr != nil {
 		return getErr
@@ -99,14 +100,14 @@ func (s *userService) DeleteUser(userId int64) *errors.RestErr {
 	return nil
 }
 
-func (s *userService) SearchUser(status string) (users.Users, *errors.RestErr) {
+func (s *userService) SearchUser(status string) (users.Users, *rest_errors.RestErr) {
 	dao := &users.User{
 		Status: status,
 	}
 	return dao.FindByStatus()
 }
 
-func (s *userService) LoginUser(request users.LoginRequest) (*users.User, *errors.RestErr) {
+func (s *userService) LoginUser(request users.LoginRequest) (*users.User, *rest_errors.RestErr) {
 	if err := request.Validate(); err != nil {
 		return nil, err
 	}

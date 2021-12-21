@@ -1,12 +1,13 @@
 package users
 
 import (
+	"errors"
 	"fmt"
 	"github.com/aftaab60/bookstore_users-api/datasources/mysql/users_db"
 	"github.com/aftaab60/bookstore_users-api/logger"
 	"github.com/aftaab60/bookstore_users-api/utils/crypto_utils"
-	"github.com/aftaab60/bookstore_users-api/utils/errors"
 	"github.com/aftaab60/bookstore_users-api/utils/mysql_utils"
+	"github.com/aftaab60/bookstore_utils-go/rest_errors"
 )
 //only place where we interact with persistence layer
 const (
@@ -18,33 +19,33 @@ const (
 	queryFindByEmailAndPassword = "SELECT id, first_name, last_name, email, date_created, password, status from USERS where email=? and status=?;"
 )
 
-func (user *User) Save() *errors.RestErr {
+func (user *User) Save() *rest_errors.RestErr {
 	stmt, err := users_db.Client.Prepare(queryInsertUser)
 	if err != nil {
 		logger.Error("error when trying to prepare save user statement", err)
-		return errors.NewInternalServerError("database error")
+		return rest_errors.NewInternalServerError("error when trying to prepare save user statement", errors.New("query error"))
 	}
 	defer stmt.Close()
 
 	insertResult, saveErr := stmt.Exec(user.FirstName, user.LastName, user.Email, user.DateCreated, user.Password, user.Status)
 	if saveErr != nil {
 		logger.Error("error when trying to save user", saveErr)
-		return errors.NewInternalServerError("database error")
+		return rest_errors.NewInternalServerError("error when trying to save user", errors.New("database error"))
 	}
 	userId, err := insertResult.LastInsertId()
 	if err != nil {
 		logger.Error("error when trying to get last inserted user id", err)
-		return errors.NewInternalServerError("database error")
+		return rest_errors.NewInternalServerError("error when trying to get last inserted user id", errors.New("database error"))
 	}
 	user.Id = userId
 	return nil
 }
 
-func (user *User) Get() *errors.RestErr {
+func (user *User) Get() *rest_errors.RestErr {
 	stmt, err := users_db.Client.Prepare(queryGetUser)
 	if err != nil {
 		logger.Error("error when trying to prepare get user statement", err)
-		return errors.NewInternalServerError("database error")
+		return rest_errors.NewInternalServerError("error when trying to prepare get user statement", errors.New("database error"))
 	}
 	defer stmt.Close()
 
@@ -56,10 +57,10 @@ func (user *User) Get() *errors.RestErr {
 	return nil
 }
 
-func (user *User) Update() *errors.RestErr {
+func (user *User) Update() *rest_errors.RestErr {
 	stmt, err := users_db.Client.Prepare(queryUpdateUser)
 	if err != nil {
-		return errors.NewInternalServerError(err.Error())
+		return rest_errors.NewInternalServerError(err.Error(), err)
 	}
 	defer stmt.Close()
 
@@ -70,10 +71,10 @@ func (user *User) Update() *errors.RestErr {
 	return nil
 }
 
-func (user *User) Delete() *errors.RestErr {
+func (user *User) Delete() *rest_errors.RestErr {
 	stmt, err := users_db.Client.Prepare(queryDeleteUser)
 	if err != nil {
-		return errors.NewInternalServerError(err.Error())
+		return rest_errors.NewInternalServerError(err.Error(), err)
 	}
 	defer stmt.Close()
 
@@ -84,16 +85,16 @@ func (user *User) Delete() *errors.RestErr {
 	return nil
 }
 
-func (user *User) FindByStatus() ([]User, *errors.RestErr) {
+func (user *User) FindByStatus() ([]User, *rest_errors.RestErr) {
 	stmt, err := users_db.Client.Prepare(queryFindByStatus)
 	if err != nil {
-		return nil, errors.NewInternalServerError(err.Error())
+		return nil, rest_errors.NewInternalServerError(err.Error(), err)
 	}
 	defer stmt.Close()
 
 	rows, err := stmt.Query(user.Status)
 	if err != nil {
-		return nil, errors.NewInternalServerError(err.Error())
+		return nil, rest_errors.NewInternalServerError(err.Error(), err)
 	}
 	defer rows.Close()
 
@@ -106,16 +107,16 @@ func (user *User) FindByStatus() ([]User, *errors.RestErr) {
 		results = append(results, user)
 	}
 	if len(results)==0 {
-		return nil, errors.NewNotFoundError("no result with matching status: "+user.Status)
+		return nil, rest_errors.NewNotFoundError("no result with matching status: "+user.Status)
 	}
 	return results, nil
 }
 
-func (user *User) FindByEmailAndPassword() *errors.RestErr {
+func (user *User) FindByEmailAndPassword() *rest_errors.RestErr {
 	stmt, err := users_db.Client.Prepare(queryFindByEmailAndPassword)
 	if err != nil {
 		logger.Error("error when trying to prepare get user by email and password statement", err)
-		return errors.NewInternalServerError("database error")
+		return rest_errors.NewInternalServerError("error when trying to prepare get user by email and password statement", errors.New("database error"))
 	}
 	defer stmt.Close()
 
@@ -123,10 +124,10 @@ func (user *User) FindByEmailAndPassword() *errors.RestErr {
 	result := stmt.QueryRow(user.Email, user.Status)
 	if getErr := result.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.DateCreated, &user.Password, &user.Status); getErr != nil {
 		logger.Error(fmt.Sprintf("invalid user credenatials"), getErr)
-		return errors.NewNotFoundError("incorrect user credentials")
+		return rest_errors.NewNotFoundError("incorrect user credentials")
 	}
 	if err := crypto_utils.CompareBcryptHashWithPassword(user.Password, password); err != nil {
-		return errors.NewNotFoundError("incorrect user credentials")
+		return rest_errors.NewNotFoundError("incorrect user credentials")
 	}
 	return nil
 }
